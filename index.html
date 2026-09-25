@@ -64,6 +64,10 @@ button:focus-visible{outline:3px solid var(--teal);outline-offset:3px}
 .opt .ico svg{display:block;height:auto;transition:width .45s cubic-bezier(.3,1.5,.5,1)}
 .opt.now{background:var(--yolk);color:var(--yolk-ink)}
 .opt.later{background:var(--teal);color:var(--teal-ink)}
+.ctx{display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.ctx p{font-size:17px}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);font-weight:700}
+.opt .when{max-width:15ch;line-height:1.25}
 .or{text-align:center;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .big{font-family:var(--display);font-weight:800;font-size:clamp(34px,10vw,50px);line-height:1.02;letter-spacing:-.02em}
 .big em{font-style:normal;color:var(--teal)}
@@ -105,9 +109,14 @@ button:focus-visible{outline:3px solid var(--teal);outline-offset:3px}
    backend: URL della Web App di Google Apps Script (vedi Code.gs).
    Lascia "" per la modalità "postazione": i risultati restano su questo dispositivo. */
 const CONFIG = {
-  backend: "https://script.google.com/macros/s/AKfycbwoEZSqH3_cZJycEm9R5xcQCw1vil338HjlXtlQknq9v7Jg4by-oBSpllHHY70tAZvM/exec",
+  backend: "https://script.google.com/macros/s/AKfycby7jjQN5B2Wnj8gC9wistPhwMN6H2f08m21iLk2OOfn_DEo3VnUtC4xuKyvE-geilhQ/exec",
   session: "notte-ricercatori-2026",
-  depositRate: 0.025   // conto deposito 12 mesi, media lorda ≈ 2,45% (SF Advisor, settembre 2026)
+  depositRate: 0.025,  // conto deposito 12 mesi, media lorda ≈ 2,45% (SF Advisor, settembre 2026)
+  refs: [              // riferimenti mostrati sulle scale (tasso annuo)
+    {n:1, name:"Conto deposito", rate:0.025, note:"media lorda a 12 mesi"},
+    {n:2, name:"BTP a 10 anni",  rate:0.045, note:"rendimento, settembre 2026"},
+    {n:3, name:"Azioni nel lungo periodo", rate:0.08, note:"media storica, non garantita"}
+  ]
 };
 
 /* ============ Metodo ============
@@ -131,6 +140,51 @@ function pickItem(target, prev){
   const pool = scored.filter(x => x.e <= tol + 1e-9).slice(0, 8);
   return pool[Math.floor(Math.random()*pool.length)].it;
 }
+/* ============ Contesti reali, scelti in base al ritardo ============
+   Gli importi e i ritardi restano quelli del compito: cambia solo la cornice. */
+// Ogni situazione vale per un intervallo di ritardi (giorni, min–max). "fam" evita due varianti della stessa situazione.
+const CONTEXTS = [
+  {fam:"fattura", min:1, max:61, t:"La fattura", q:"Hai fatto un lavoro come libero professionista. Il cliente ti propone due modi di pagarti, entrambi garantiti.", now:"subito", later:l=>`tra ${l}`},
+  {fam:"anticipo", min:1, max:91, t:"L’anticipo della banca", q:"Un cliente affidabile ti deve dei soldi. La tua banca può anticiparteli oggi trattenendo una parte, oppure aspetti che paghi lui.", now:"oggi dalla banca", later:l=>`dal cliente tra ${l}`},
+  {fam:"sconto", min:1, max:61, t:"Il pagamento anticipato", q:"Un cliente ti propone uno sconto se accetti di essere pagato prima della scadenza della fattura.", now:"oggi, con lo sconto", later:l=>`alla scadenza, tra ${l}`},
+  {fam:"bici", min:1, max:122, t:"La bici usata", q:"Porti la tua bici in un negozio dell’usato. Te la comprano subito, oppure la mettono in conto vendita a un prezzo garantito.", now:"subito", later:l=>`in conto vendita, tra ${l}`},
+  {fam:"assicurazione", min:7, max:274, t:"Il rimborso dell’assicurazione", q:"Dopo un piccolo incidente l’assicurazione ti propone una liquidazione rapida ridotta, oppure l’importo pieno, già approvato, a fine pratica.", now:"liquidati oggi", later:l=>`a fine pratica, tra ${l}`},
+  {fam:"volo", min:14, max:274, t:"Il volo cancellato", q:"La compagnia aerea ha cancellato il tuo volo. Ti offre il rimborso subito, oppure un rimborso maggiorato più avanti. Entrambi garantiti.", now:"di rimborso oggi", later:l=>`di rimborso maggiorato tra ${l}`},
+  {fam:"bolletta", min:30, max:274, t:"Il conguaglio della bolletta", q:"Il tuo fornitore di energia ti deve un conguaglio. Te lo accredita subito ridotto, oppure per intero più avanti.", now:"accreditati oggi", later:l=>`per intero tra ${l}`},
+  {fam:"mobili", min:30, max:274, t:"I vecchi mobili", q:"Un negozio compra i tuoi vecchi mobili: paga subito, oppure li vende in conto vendita a un prezzo garantito.", now:"subito", later:l=>`in conto vendita, tra ${l}`},
+  {fam:"vincolo", min:30, max:1826, t:"Il conto deposito vincolato", q:"Hai vincolato i tuoi risparmi. Se li svincoli adesso rinunci a parte degli interessi, a scadenza ricevi tutto.", now:"se svincoli oggi", later:l=>`alla scadenza, tra ${l}`},
+  {fam:"buono", min:365, max:3652, t:"Il buono fruttifero", q:"Hai un buono fruttifero postale. Puoi incassarlo subito oppure tenerlo fino alla scadenza.", now:"se lo incassi oggi", later:l=>`alla scadenza, tra ${l}`},
+  {fam:"polizza", min:365, max:3652, t:"La polizza di risparmio", q:"Puoi riscattare in anticipo la tua polizza di risparmio, oppure aspettare la scadenza. L’importo è garantito.", now:"se riscatti oggi", later:l=>`alla scadenza, tra ${l}`},
+  {fam:"certificato", min:365, max:1826, t:"Il certificato di deposito", q:"La banca ti permette di chiudere in anticipo il tuo certificato di deposito, rinunciando a parte del rendimento.", now:"se chiudi oggi", later:l=>`alla scadenza, tra ${l}`},
+  {fam:"pac", min:730, max:3652, t:"Il piano di accumulo", q:"Metti da parte una piccola somma ogni mese. Puoi chiudere il piano adesso o portarlo a termine: l’importo finale è garantito.", now:"se chiudi oggi", later:l=>`a fine piano, tra ${l}`},
+  {fam:"caldaia", min:1461, max:3652, t:"La caldaia nuova", q:"Sostituisci la caldaia con una più efficiente. L’installatore ti propone lo sconto in fattura, oppure recuperi di più con le detrazioni fiscali.", now:"di sconto in fattura oggi", later:l=>`in detrazioni entro ${l}`},
+  {fam:"pannelli", min:1461, max:3652, t:"I pannelli solari", q:"Installi i pannelli solari. Puoi avere subito uno sconto sul prezzo, oppure recuperare di più con le detrazioni fiscali.", now:"di sconto oggi", later:l=>`in detrazioni entro ${l}`},
+  {fam:"cappotto", min:1461, max:3652, t:"Il cappotto termico", q:"Isoli le pareti di casa per consumare meno energia. Puoi avere subito uno sconto in fattura, oppure recuperare di più con le detrazioni.", now:"di sconto in fattura oggi", later:l=>`in detrazioni entro ${l}`},
+  {fam:"pensione", min:1461, max:3652, t:"Il fondo pensione", q:"Puoi riscattare in anticipo una parte del tuo fondo pensione integrativo, oppure lasciarla maturare.", now:"se riscatti oggi", later:l=>`lasciandola maturare, tra ${l}`}
+];
+// Sceglie la domanda: tra le coppie importo/ritardo più vicine alla soglia da testare,
+// solo quelle mai viste da questa persona e con una situazione non ancora usata.
+function pickQuestion(target, st){
+  const scored = ITEMS.filter(it => !st.usedItems.has(it) && (!st.item || it.d !== st.item.d))
+    .map(it => ({it, e: Math.abs(Math.log(it.k/target))})).sort((a,b) => a.e - b.e);
+  const tol = Math.max(scored[0].e, 0.03);
+  const near = scored.filter(x => x.e <= tol + 1e-9);
+  const tries = [near, scored.slice(0, 60), scored];
+  for (const list of tries){
+    const opts = [];
+    for (const {it} of list){
+      const ctxs = CONTEXTS.filter(c => it.d >= c.min && it.d <= c.max && !st.usedFam.has(c.fam));
+      if (ctxs.length) opts.push({it, ctxs});
+      if (opts.length >= 8) break;
+    }
+    if (opts.length){
+      const o = opts[Math.floor(Math.random()*opts.length)];
+      return {it:o.it, cx:o.ctxs[Math.floor(Math.random()*o.ctxs.length)]};
+    }
+  }
+  const it = scored[0].it; // riserva (non dovrebbe servire)
+  return {it, cx: CONTEXTS.find(c => it.d >= c.min && it.d <= c.max) || CONTEXTS[0]};
+}
 const BANDS = [
   {id:"A",label:"< 5%",max:.05},{id:"B",label:"5–10%",max:.10},{id:"C",label:"10–25%",max:.25},
   {id:"D",label:"25–50%",max:.50},{id:"E",label:"50–100%",max:1},{id:"F",label:"100–250%",max:2.5},
@@ -142,7 +196,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":
 const nf = (x,d=0) => x.toLocaleString("it-IT",{maximumFractionDigits:d,minimumFractionDigits:d});
 const eur = x => nf(x, x < 10 ? 2 : 0) + " €";
 const annual = k => k*365;
-function pct(r){ const p = r*100; if (p >= 10000) return "oltre 10.000%"; return nf(p, p < 10 ? 1 : 0) + "%"; }
+function pct(r){ const p = r*100; if (p >= 10000) return "oltre 10.000%"; const d = p < 10 && Math.abs(p - Math.round(p)) > 0.05 ? 1 : 0; return nf(p, d) + "%"; }
 function bandOf(k){ const r = annual(k); return BANDS.find(b => r < b.max); }
 function humanDays(d){
   if (d < 1) { const h = Math.round(d*24); return h <= 1 ? "circa 1 ora" : `circa ${h} ore`; }
@@ -178,7 +232,7 @@ const HEN = `<svg viewBox="0 0 110 100" aria-hidden="true">
 const ICO_BASE = 72, ICO_STEP = 7;   // 72 px all'inizio; dopo 7 scelte uguali: 121 px contro 23 px
 const icoSizes = st => { const d = st.eggs - st.hens; return {egg: ICO_BASE + ICO_STEP*d, hen: ICO_BASE - ICO_STEP*d}; };
 
-/* ============ Dati della Media ferrarese ============ */
+/* ============ Dati del ferrarese medio ============ */
 async function submitResult(r){
   const local = store.get(LKEY, []); local.push({t:Date.now(), k:r.k}); store.set(LKEY, local);
   if (!CONFIG.backend) return;
@@ -203,17 +257,25 @@ function logAxis({min, max, ticks, markers, overflow, label}){
   const W = 520, x0 = 20, w = W - 40 - (overflow ? 58 : 0), y = 78;
   const X = v => x0 + (Math.log(Math.min(Math.max(v, min), max)) - Math.log(min)) / (Math.log(max) - Math.log(min)) * w;
   const font = `font-family="Atkinson Hyperlegible, sans-serif"`;
-  let s = `<svg class="axis" viewBox="0 0 ${W} 124" role="img" aria-label="${esc(label)}">`;
+  let s = `<svg class="axis" viewBox="0 0 ${W} 200" role="img" aria-label="${esc(label)}">`;
   s += `<line x1="${x0}" y1="${y}" x2="${x0+w}" y2="${y}" stroke="var(--line)" stroke-width="2"/>`;
   if (overflow){
     s += `<line x1="${x0+w}" y1="${y}" x2="${x0+w+44}" y2="${y}" stroke="var(--line)" stroke-width="2" stroke-dasharray="4 4"/>`;
     s += `<path d="M${x0+w+44} ${y-5}l9 5-9 5Z" fill="var(--muted)"/>`;
-    s += `<text x="${x0+w+40}" y="${y+24}" font-size="12" text-anchor="middle" fill="var(--muted)" ${font}>oltre</text>`;
+    s += `<text x="${x0+w+40}" y="${y+36}" font-size="14" text-anchor="middle" fill="var(--muted)" ${font}>oltre</text>`;
   }
   ticks.forEach(([v,l],i) => { const x = X(v), ta = i === 0 ? "start" : (!overflow && i === ticks.length-1 ? "end" : "middle");
     s += `<line x1="${x}" y1="${y-5}" x2="${x}" y2="${y+5}" stroke="var(--muted)" stroke-width="1.5"/>`;
-    s += `<text x="${x}" y="${y+24}" font-size="12" text-anchor="${ta}" fill="var(--muted)" ${font}>${l}</text>`; });
-  markers.forEach(m => {
+    s += `<text x="${x}" y="${y+36}" font-size="14" text-anchor="${ta}" fill="var(--muted)" ${font}>${l}</text>`; });
+  // Riferimenti: etichetta scritta sotto l'asse, a scalini, collegata da una linea sottile
+  const refs = markers.filter(m => m.ref).map(m => ({...m, x: overflow && m.v > max ? x0 + w + 40 : X(m.v)})).sort((a,b) => a.x - b.x);
+  const endSide = refs.length && refs[0].x > W/2;
+  refs.forEach((m,i) => {
+    const depth = endSide ? i : refs.length - 1 - i, ly = y + 66 + depth*22;
+    s += `<line x1="${m.x}" y1="${y}" x2="${m.x}" y2="${ly-4}" stroke="${m.c}" stroke-width="1" stroke-dasharray="2 2"/>`;
+    s += `<circle cx="${m.x}" cy="${y}" r="4" fill="${m.c}"/>`;
+    s += `<text x="${endSide ? m.x+3 : m.x-3}" y="${ly+6}" font-size="16" text-anchor="${endSide ? 'end' : 'start'}" fill="${m.c}" ${font}>${esc(m.ref)}</text>`; });
+  markers.filter(m => !m.ref).forEach(m => {
     const over = overflow && m.v > max, x = over ? x0 + w + 40 : X(m.v);
     const anchor = x < 80 ? "start" : (x > W - 80 ? "end" : "middle");
     s += `<line x1="${x}" y1="${y-m.h}" x2="${x}" y2="${y}" stroke="${m.c}" stroke-width="2"/>`;
@@ -230,12 +292,12 @@ function timeAxis(markers){
     ticks:[[1,"1 giorno"],[7,"1 sett."],[30.44,"1 mese"],[365.25,"1 anno"],[3652.5,"10 anni"],[10957,"30"]], markers});
 }
 function markerSet(k, roomK, toValue){
-  const dk = CONFIG.depositRate/365;
   return [
-    {v:toValue(dk), l:"Conto deposito", c:"var(--ref)", h:16, r:5},
-    ...(roomK ? [{v:toValue(roomK), l:"Media ferrarese", c:"var(--teal)", h:36, r:6}] : []),
-    ...(k ? [{v:toValue(k), l:"Tu", c:"var(--yolk)", h:56, r:8}] : [])];
+    ...CONFIG.refs.map(f => ({v:toValue(f.rate/365), ref:`${f.name} ${pct(f.rate)}`, c:"var(--ref)"})),
+    ...(roomK ? [{v:toValue(roomK), l:"Ferrarese medio", c:"var(--teal)", h:30, r:6}] : []),
+    ...(k ? [{v:toValue(k), l:"Tu", c:"var(--yolk)", h:52, r:8}] : [])];
 }
+const refLegend = () => CONFIG.refs.map(f => `<span>${esc(f.name)} ${pct(f.rate)}</span>`).join("");
 
 /* ============ Partecipante ============ */
 let st, last;
@@ -244,26 +306,28 @@ function intro(){
     <div class="brand"><b>Quanto vale il nostro futuro?</b><span>Notte dei Ricercatori</span></div>
     <div class="stack">
       <h1>Un uovo oggi o una gallina domani?</h1>
-      <p class="lede">Sette scelte veloci tra soldi subito e soldi più avanti. Alla fine scopri quanto “sconti” il futuro, e come te la cavi rispetto alla Media ferrarese.</p>
+      <p class="lede">Sette scelte veloci tra presente e futuro: scopri il tuo tasso di sconto e confrontalo con il ferrarese medio.</p>
     </div>
     <ul class="rules">
       <li><span class="dot">7</span><span>domande, circa un minuto in tutto</span></li>
-      <li><span class="dot">€</span><span>soldi immaginari: rispondi come se fossero veri</span></li>
+      <li><span class="dot">€</span><span>situazioni reali, soldi immaginari: rispondi come se fossero veri</span></li>
       <li><span class="dot">?</span><span>nessuna risposta giusta o sbagliata, e nessun dato personale</span></li>
     </ul>
     <button class="cta" id="start">Inizia</button>
     <p class="small">Procedura adattiva ispirata a Koffarnus &amp; Bickel (2014) e Kirby (2009), modello iperbolico.</p>`;
-  document.getElementById("start").onclick = () => { st = {lo:KMIN, hi:KMAX, n:0, answers:[], item:null, eggs:0, hens:0, prev:{egg:ICO_BASE, hen:ICO_BASE}}; question(); };
+  document.getElementById("start").onclick = () => { st = {lo:KMIN, hi:KMAX, n:0, answers:[], item:null, ctx:null, usedItems:new Set(), usedFam:new Set(), eggs:0, hens:0, prev:{egg:ICO_BASE, hen:ICO_BASE}}; question(); };
 }
 function question(){
-  st.item = pickItem(Math.sqrt(st.lo*st.hi), st.item);
-  const it = st.item;
-  const now = `<button class="opt now" id="b-now"><span class="txt"><span class="amt">${nf(it.S)} €</span><span class="when">oggi</span></span><span class="ico">${EGG.replace('<svg ', `<svg id="i-egg" style="width:${Math.round(st.prev.egg*.83)}px" `)}</span></button>`;
-  const later = `<button class="opt later" id="b-later"><span class="txt"><span class="amt">${nf(it.L)} €</span><span class="when">tra ${esc(it.lab)}</span></span><span class="ico">${HEN.replace('<svg ', `<svg id="i-hen" style="width:${st.prev.hen}px" `)}</span></button>`;
+  const pick = pickQuestion(Math.sqrt(st.lo*st.hi), st);
+  const it = st.item = pick.it, cx = st.ctx = pick.cx;
+  st.usedItems.add(it); st.usedFam.add(cx.fam);
+  const now = `<button class="opt now" id="b-now"><span class="txt"><span class="amt">${nf(it.S)} €</span><span class="when">${esc(cx.now)}</span></span><span class="ico">${EGG.replace('<svg ', `<svg id="i-egg" style="width:${Math.round(st.prev.egg*.83)}px" `)}</span></button>`;
+  const later = `<button class="opt later" id="b-later"><span class="txt"><span class="amt">${nf(it.L)} €</span><span class="when">${esc(cx.later(it.lab))}</span></span><span class="ico">${HEN.replace('<svg ', `<svg id="i-hen" style="width:${st.prev.hen}px" `)}</span></button>`;
   const flip = Math.random() < .5;
   $app.innerHTML = `
     <div class="brand"><b>Quanto vale il nostro futuro?</b><span>Scelta ${st.n+1} di ${NQ}</span></div>
     <div class="progress" aria-hidden="true">${Array.from({length:NQ},(_,i)=>`<i class="${i<st.n?'done':i===st.n?'now':''}"></i>`).join("")}</div>
+    <div class="ctx"><span class="eyebrow">${esc(cx.t)}</span><p>${esc(cx.q)}</p></div>
     <h2>Cosa preferisci?</h2>
     <div class="choices">${flip ? later : now}<div class="or">oppure</div>${flip ? now : later}</div>`;
   document.getElementById("b-now").onclick = () => choose("now");
@@ -290,19 +354,21 @@ function choose(c){
 async function result(r){
   const draw = room => {
     const vals = room.values, roomK = vals.length >= 2 ? geoMean(vals) : null;
-    const rate = annual(r.k), dep = CONFIG.depositRate;
-    const times = rate/dep;
-    const depLine = times >= 1.5 ? `Un conto deposito oggi rende circa ${pct(dep)} lordo: il tuo tasso è <strong>${nf(times, times < 10 ? 1 : 0)} volte</strong> più alto.`
-      : times > 0.67 ? `È più o meno quanto rende oggi un conto deposito (circa ${pct(dep)} lordo): sei una formica!`
-      : `È meno di quanto rende oggi un conto deposito (circa ${pct(dep)} lordo): più paziente di così è difficile.`;
+    const rate = annual(r.k), [dep, btp, stock] = CONFIG.refs.map(f => f.rate);
+    const depLine = rate > stock * 1.5 ? `Per aspettare chiedi più di quanto hanno reso in media le azioni nel lungo periodo (circa ${pct(stock)} l’anno): il tuo tasso è <strong>${nf(rate/stock, rate/stock < 10 ? 1 : 0)} volte</strong> più alto.`
+      : rate > btp ? `Sei vicino ai rendimenti dei mercati: più di un BTP a 10 anni (${pct(btp)}), nell’ordine delle azioni nel lungo periodo (circa ${pct(stock)}).`
+      : rate > dep ? `Ti basta poco per aspettare: tra un conto deposito (${pct(dep)}) e un BTP a 10 anni (${pct(btp)}). Sei una formica!`
+      : `Ti basta meno di quanto rende un conto deposito (${pct(dep)}): più paziente di così è difficile.`;
     let cmp;
     if (roomK){
       const ratio = r.k/roomK;
-      cmp = ratio < 0.7 ? "Sei <strong>più paziente</strong> della Media ferrarese." :
-            ratio > 1.4 ? "Sei <strong>meno paziente</strong> della Media ferrarese." :
-            "Sei <strong>in linea</strong> con la Media ferrarese.";
-      cmp += ` La Media ferrarese (${vals.length} persone) sconta il futuro del ${pct(annual(roomK))} l’anno.`;
-    } else cmp = "La Media ferrarese comparirà quando avranno risposto altre persone.";
+      cmp = ratio < 0.7 ? "Sei <strong>più paziente</strong> del ferrarese medio." :
+            ratio > 1.4 ? "Sei <strong>meno paziente</strong> del ferrarese medio." :
+            "Sei <strong>in linea</strong> con il ferrarese medio.";
+      cmp += ` Il ferrarese medio (${vals.length} persone) sconta il futuro del ${pct(annual(roomK))} l’anno.`;
+    } else if (room.source === "error") cmp = "Non riesco a collegarmi al conteggio del ferrarese medio: controlla la connessione, oppure avvisa chi gestisce il gioco.";
+    else if (room.source === "wait") cmp = "Sto calcolando il ferrarese medio…";
+    else cmp = "Il ferrarese medio comparirà quando avranno risposto almeno due persone.";
     $app.innerHTML = `
       <div class="brand"><b>Il tuo risultato</b><span>Scelte completate</span></div>
       <div class="stack">
@@ -316,7 +382,8 @@ async function result(r){
       </dl>
       <div class="scale"><h3>Scala dei tassi annui</h3>${rateAxis(markerSet(r.k, roomK, k => annual(k)))}</div>
       <div class="scale"><h3>Scala del tempo: dopo quanto 1.000 € valgono la metà?</h3>${timeAxis(markerSet(r.k, roomK, k => 1/k))}</div>
-      <div class="legend"><span><i style="background:var(--yolk)"></i>Tu</span>${roomK?'<span><i style="background:var(--teal)"></i>Media ferrarese</span>':''}<span><i style="background:var(--ref)"></i>Conto deposito ≈ ${pct(dep)}</span></div>
+      <div class="legend"><span><i style="background:var(--yolk)"></i>Tu</span>${roomK?'<span><i style="background:var(--teal)"></i>Ferrarese medio</span>':''}<span><i style="background:var(--ref)"></i>Riferimenti</span></div>
+      <p class="small">Azioni: media storica di lungo periodo, non garantita. BTP: rendimento del decennale, settembre 2026.</p>
       <p>${cmp}</p>
       <div class="row">
         <button class="cta" id="again">Fai rispondere un’altra persona</button>
@@ -324,8 +391,13 @@ async function result(r){
       <p class="small">Tasso di sconto k = ${kText(r.k)} al giorno (modello iperbolico); tasso annuo = k × 365. Più il punto è a sinistra sulla scala dei tassi, più il futuro conta per te.</p>`;
     document.getElementById("again").onclick = intro;
   };
-  draw(CONFIG.backend ? {values:[]} : {values: store.get(LKEY,[]).map(x => x.k)});
-  if (CONFIG.backend){ await new Promise(res => setTimeout(res, 1200)); const room = await fetchRoom(); if (room.values.length) draw(room); }
+  draw(CONFIG.backend ? {source:"wait", values:[]} : {source:"local", values: store.get(LKEY,[]).map(x => x.k)});
+  if (CONFIG.backend){
+    await new Promise(res => setTimeout(res, 1500));
+    let room = await fetchRoom();
+    if (room.source === "error") { await new Promise(res => setTimeout(res, 2500)); room = await fetchRoom(); }
+    if (last === r) draw(room);
+  }
 }
 
 /* ============ Schermo (proiettore): aggiungi #schermo all'indirizzo ============ */
@@ -336,8 +408,10 @@ function screen(){
     const vals = room.values, gk = geoMean(vals);
     const counts = BANDS.map(b => vals.filter(v => bandOf(v) === b).length);
     const max = Math.max(1, ...counts);
-    const W = 760, H = 380, x0 = 10, top = 44, bh = 250, bw = (W-20)/8;
-    const roomB = gk ? BANDS.indexOf(bandOf(gk)) : -1, depB = BANDS.indexOf(bandOf(CONFIG.depositRate/365));
+    const W = 760, H = 400, x0 = 10, top = 44, bh = 250, bw = (W-20)/8;
+    const roomB = gk ? BANDS.indexOf(bandOf(gk)) : -1;
+    const SHORT = {"Conto deposito":"conto deposito","BTP a 10 anni":"BTP","Azioni nel lungo periodo":"azioni"};
+    const refB = BANDS.map(b => CONFIG.refs.filter(f => bandOf(f.rate/365) === b).map(f => SHORT[f.name] || f.name));
     let svg = `<svg class="bars" viewBox="0 0 ${W} ${H}" role="img" aria-label="Quante persone per fascia di tasso annuo">`;
     svg += `<line x1="${x0}" y1="${top+bh}" x2="${W-10}" y2="${top+bh}" stroke="var(--line)" stroke-width="2"/>`;
     counts.forEach((c,i) => {
@@ -345,25 +419,25 @@ function screen(){
       if (c) svg += `<rect x="${x}" y="${top+bh-h}" width="${w}" height="${h}" rx="6" fill="${i===roomB?'var(--teal)':'var(--yolk)'}"/>`;
       if (c) svg += `<text x="${x+w/2}" y="${top+bh-h-10}" text-anchor="middle" font-size="22" font-weight="700" fill="var(--ink)" font-family="Bricolage Grotesque, sans-serif">${c}</text>`;
       svg += `<text x="${x+w/2}" y="${top+bh+32}" text-anchor="middle" font-size="15" font-weight="700" fill="var(--ink)" font-family="Atkinson Hyperlegible, sans-serif">${esc(BANDS[i].label)}</text>`;
-      if (i === depB) svg += `<text x="${x+w/2}" y="${top+bh+56}" text-anchor="middle" font-size="14" fill="var(--ref)" font-family="Atkinson Hyperlegible, sans-serif">▲ conto deposito</text>`;
+      refB[i].forEach((n,j) => svg += `<text x="${x+w/2}" y="${top+bh+54+j*17}" text-anchor="middle" font-size="13" fill="var(--ref)" font-family="Atkinson Hyperlegible, sans-serif">▲ ${esc(n)}</text>`);
     });
     svg += `<text x="${W/2}" y="${H-6}" text-anchor="middle" font-size="14" fill="var(--muted)" font-family="Atkinson Hyperlegible, sans-serif">tasso di sconto annuo</text></svg>`;
     const src = room.source === "live" ? "Dati dal vivo" : room.source === "error" ? "Collegamento non riuscito: riprovo tra pochi secondi" : "Postazione singola: dati raccolti su questo dispositivo";
-    const body = `<h1>Quanto sconta il futuro la Media ferrarese?</h1>
+    const body = `<h1>Quanto sconta il futuro il ferrarese medio?</h1>
         <div class="scr-grid">
           <div class="kpi">
             <div><div class="lbl">Risposte</div><div class="n">${vals.length}</div></div>
-            <div><div class="lbl">Media ferrarese</div><div class="v">${gk ? pct(annual(gk)) + " l’anno" : "—"}</div></div>
+            <div><div class="lbl">Ferrarese medio</div><div class="v">${gk ? pct(annual(gk)) + " l’anno" : "—"}</div></div>
             <div><div class="lbl">1.000 € tra un anno valgono oggi</div><div class="v">${gk ? eur(pv(gk,365)) : "—"}</div></div>
             <div><div class="lbl">1.000 € valgono la metà dopo</div><div class="v">${gk ? bare(humanDays(1/gk)) : "—"}</div></div>
-            <div><div class="lbl">Conto deposito</div><div class="v" style="color:var(--ref)">≈ ${pct(CONFIG.depositRate)} l’anno</div></div>
+            <div><div class="lbl">Riferimenti</div><div class="legend" style="flex-direction:column;align-items:flex-start;font-size:17px;color:var(--ink)">${refLegend()}</div></div>
           </div>
           <div class="stack">${svg}
             <div class="two">
               <div class="scale"><h3>Scala dei tassi annui</h3>${rateAxis(markerSet(null, gk, k => annual(k)))}</div>
               <div class="scale"><h3>Scala del tempo</h3>${timeAxis(markerSet(null, gk, k => 1/k))}</div>
             </div>
-            <p class="small">Media ferrarese = media geometrica dei tassi, come negli studi di riferimento. In verde la fascia che la contiene.</p></div>
+            <p class="small">Ferrarese medio = media geometrica dei tassi, come negli studi di riferimento. In verde la fascia che lo contiene. Azioni: media storica di lungo periodo, non garantita.</p></div>
         </div>`;
     $app.innerHTML = `
       <div class="brand"><b>Quanto vale il nostro futuro?</b><span>${esc(src)}</span></div>
