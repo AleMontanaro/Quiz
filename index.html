@@ -84,6 +84,55 @@ button:focus-visible{outline:3px solid var(--teal);outline-offset:3px}
 .note{border-left:3px solid var(--yolk);padding:4px 0 4px 14px}
 .row{display:flex;gap:10px;flex-wrap:wrap}
 .row .cta{flex:1 1 100%}
+/* guida */
+.gbtn{flex:1 1 100%;font-weight:700;font-size:17px;padding:16px}
+.guide{display:flex;flex-direction:column;gap:30px}
+.guide section{display:flex;flex-direction:column;gap:12px}
+.guide h2{font-size:25px}
+.guide .gh1{font-size:clamp(32px,9vw,46px)}
+.guide ul{margin:0;padding-left:20px;display:grid;gap:8px}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);font-weight:700}
+.gflow{display:grid;gap:8px;font-size:15px;font-weight:700}
+.gflow span{border-radius:10px;padding:8px 12px}
+.gflow .fw{background:color-mix(in srgb,var(--yolk) 22%,var(--surface))}
+.gflow .bw{background:color-mix(in srgb,var(--teal) 16%,var(--surface));color:var(--teal)}
+.gformula{font-family:var(--display);font-weight:700;font-size:20px;text-align:center;white-space:nowrap}
+.gtable{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.gtable table{border-collapse:separate;border-spacing:2px;width:100%;min-width:420px;font-variant-numeric:tabular-nums;font-size:15px}
+.gtable th,.gtable td{padding:7px 6px;text-align:center;white-space:nowrap}
+.gtable thead th{font-family:var(--display);border-bottom:2px solid var(--ink)}
+.gtable thead small{display:block;font-family:var(--body);font-weight:400;font-size:11px;color:var(--muted)}
+.gtable tbody th{text-align:left;font-family:var(--display);white-space:nowrap}
+.gtable td{border-radius:6px;background:color-mix(in srgb,var(--teal) calc(var(--a,0)*100%),var(--surface))}
+.gtable td.dk{color:#fff}
+.gcmp{min-width:0!important}
+.gcmp th{white-space:normal}
+.gcmp td{background:var(--surface)!important;font-family:var(--display);font-weight:800;font-size:18px}
+.gcmp td.t{color:var(--teal)}
+.gtri{display:grid;gap:8px;margin:0}
+.gtri div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.gtri dt{font-family:var(--display);font-weight:700}
+.gtri dd{margin:2px 0 0;color:var(--muted);font-size:15px}
+.gchart{width:100%;height:auto;display:block}
+.gsched{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;text-align:center;font-size:12px;color:var(--muted)}
+.gsched div{border:1px solid var(--line);border-radius:10px;padding:6px 2px}
+.gsched b{display:block;font-family:var(--display);font-size:19px;color:var(--teal)}
+.gduo{display:grid;gap:12px}
+@media (min-width:520px){.gduo{grid-template-columns:1fr 1fr}}
+.gpanel{border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--surface)}
+.gpanel h3{font-size:17px}
+.gpanel p{font-size:15px}
+.ppl{display:flex;gap:6px}
+.pp{width:40px;height:auto}
+.verdict{font-family:var(--display);font-weight:800;border-radius:8px;padding:5px 10px;align-self:flex-start}
+.verdict.bad{background:color-mix(in srgb,var(--comb) 18%,var(--surface));color:var(--comb)}
+.verdict.good{background:color-mix(in srgb,var(--teal) 18%,var(--surface));color:var(--teal)}
+.gstats{display:grid;gap:8px}
+.gstats div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:15px;color:var(--muted)}
+.gstats b{display:block;font-family:var(--display);font-size:24px;color:var(--ink)}
+.glesson{background:var(--ink);color:var(--ground);border-radius:16px;padding:16px 18px;display:grid;gap:8px}
+.glesson h3{color:var(--ground)}
+.glink{text-decoration:none;text-align:center;flex:1 1 100%;font-weight:700}
 /* projector */
 .screen body{font-size:20px}
 .screen .wrap{max-width:1180px;gap:26px}
@@ -109,7 +158,7 @@ button:focus-visible{outline:3px solid var(--teal);outline-offset:3px}
    backend: URL della Web App di Google Apps Script (vedi Code.gs).
    Lascia "" per la modalità "postazione": i risultati restano su questo dispositivo. */
 const CONFIG = {
-  backend: "https://script.google.com/macros/s/AKfycby7jjQN5B2Wnj8gC9wistPhwMN6H2f08m21iLk2OOfn_DEo3VnUtC4xuKyvE-geilhQ/exec",
+  backend: "https://script.google.com/macros/s/AKfycby7g8zPoq5ThKFVN2nwY0ITkxcCVjnX_7wTatGQpdkSTgrb2pz7hN-wd_-zU6uUlBIj/exec",
   session: "notte-ricercatori-2026",
   depositRate: 0.025,  // conto deposito 12 mesi, media lorda ≈ 2,45% (SF Advisor, settembre 2026)
   refs: [              // riferimenti mostrati sulle scale (tasso annuo)
@@ -387,9 +436,11 @@ async function result(r){
       <p>${cmp}</p>
       <div class="row">
         <button class="cta" id="again">Fai rispondere un’altra persona</button>
+        <button class="ghost gbtn" id="toguide">Scopri di più: la guida allo sconto →</button>
       </div>
       <p class="small">Tasso di sconto k = ${kText(r.k)} al giorno (modello iperbolico); tasso annuo = k × 365. Più il punto è a sinistra sulla scala dei tassi, più il futuro conta per te.</p>`;
     document.getElementById("again").onclick = intro;
+    document.getElementById("toguide").onclick = guide;
   };
   draw(CONFIG.backend ? {source:"wait", values:[]} : {source:"local", values: store.get(LKEY,[]).map(x => x.k)});
   if (CONFIG.backend){
@@ -398,6 +449,94 @@ async function result(r){
     if (room.source === "error") { await new Promise(res => setTimeout(res, 2500)); room = await fetchRoom(); }
     if (last === r) draw(room);
   }
+}
+
+/* ============ Guida allo sconto (dopo il quiz) ============ */
+function guide(){
+  const f3 = x => x < .0005 ? "&lt; 0,001" : x.toLocaleString("it-IT",{minimumFractionDigits:3,maximumFractionDigits:3});
+  const rates = [.025,.05,.075,.10,.125,.15], years = [5,10,15,20,50,100];
+  const rows = years.map(t => `<tr><th>${t} anni</th>${rates.map(r => { const v = 1/Math.pow(1+r,t);
+    return `<td style="--a:${(Math.pow(v,.8)*.9).toFixed(3)}" class="${v>.45?'dk':''}">${f3(v)}</td>`; }).join("")}</tr>`).join("");
+  const weitz = T => { let f = 1; for (let y = 1; y <= T; y++) f *= 1 + (y<=5?.04: y<=25?.03: y<=75?.02: y<=300?.01:0); return 1000/f; };
+  // grafico a scalini
+  const W=400,H=230,L=38,Rm=12,T=16,B=44,w=W-L-Rm,h=H-T-B,X=y=>L+Math.log(y)/Math.log(1000)*w,Y=r=>T+h-(r/.05)*h;
+  const fo='font-family="Atkinson Hyperlegible, sans-serif"';
+  let g=`<svg class="gchart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Tasso di sconto per orizzonte: decrescente secondo Weitzman contro fisso al 4%">`;
+  [0,.01,.02,.03,.04,.05].forEach(r=>{ g+=`<line x1="${L}" x2="${L+w}" y1="${Y(r)}" y2="${Y(r)}" stroke="var(--line)"/>`;
+    g+=`<text x="${L-6}" y="${Y(r)+4}" font-size="14" text-anchor="end" fill="var(--muted)" ${fo}>${Math.round(r*100)}%</text>`; });
+  [1,5,25,75,300,1000].forEach((y,i)=>{ g+=`<text x="${X(y)}" y="${T+h+20}" font-size="14" text-anchor="${i===5?'end':i===0?'start':'middle'}" fill="var(--muted)" ${fo}>${y.toLocaleString("it-IT")}</text>`; });
+  g+=`<text x="${L+w/2}" y="${H-4}" font-size="14" text-anchor="middle" fill="var(--muted)" ${fo}>anni da oggi (scala logaritmica)</text>`;
+  g+=`<line x1="${X(1)}" x2="${X(1000)}" y1="${Y(.04)}" y2="${Y(.04)}" stroke="var(--ref)" stroke-width="2" stroke-dasharray="6 5"/>`;
+  const steps=[[1,5,.04],[5,25,.03],[25,75,.02],[75,300,.01],[300,1000,0]];
+  let d=`M${X(1)} ${Y(.04)}`; steps.forEach(([a,b,r],i)=>{ d+=` L${X(b)} ${Y(r)}`; if(i<steps.length-1) d+=` L${X(b)} ${Y(steps[i+1][2])}`; });
+  g+=`<path d="${d}" fill="none" stroke="var(--teal)" stroke-width="3.5" stroke-linejoin="round"/>`;
+  g+=`<text x="${X(1000)}" y="${Y(.04)-8}" font-size="15" text-anchor="end" fill="var(--muted)" ${fo}>tasso fisso 4%</text>`;
+  g+=`<text x="${X(1000)}" y="${Y(.026)}" text-anchor="end" font-size="15" font-weight="700" fill="var(--teal)" ${fo}>tassi decrescenti</text></svg>`;
+  const person = (v) => { const c = v===10 ? 'var(--teal)' : 'var(--comb)'; return `<svg viewBox="0 0 40 70" class="pp"><circle cx="20" cy="14" r="9" fill="${c}"/><path d="M6 46q0-20 14-20t14 20Z" fill="${c}"/><text x="20" y="64" text-anchor="middle" font-size="13" font-weight="800" fill="var(--ink)" font-family="Bricolage Grotesque, sans-serif">${v}</text></svg>`; };
+  $app.innerHTML = `
+    <div class="brand"><b>Guida allo sconto</b><span>Dopo il quiz</span></div>
+    <div class="guide">
+      <section><h1 class="gh1">Un uovo oggi o una gallina domani?</h1>
+        <p class="lede">Perché diamo al futuro meno peso del presente, e cosa significa quando in gioco ci sono l’ambiente e le generazioni che verranno.</p></section>
+
+      <section><span class="eyebrow">1 · Che cos’è lo sconto</span><h2>Sommare euro di anni diversi</h2>
+        <p>Molti progetti, come isolare una casa, costruire una ferrovia o proteggere un fiume, hanno <strong>costi e benefici distribuiti su molti anni</strong>. Per decidere se conviene investire bisogna sommarli e ottenere un unico beneficio netto, calcolato <em>oggi</em>. Ma un euro di oggi e un euro tra vent’anni non valgono lo stesso: bisogna prima “tradurli” in euro di oggi.</p>
+        <div class="gflow"><span class="fw">capitalizzazione → quanto varrà domani ciò che investo oggi</span><span class="bw">← attualizzazione (sconto): quanto vale oggi ciò che riceverò domani</span></div>
+        <p>Lo sconto è il percorso inverso dell’interesse composto. Con un tasso <strong>r</strong>, un euro ricevuto tra <strong>t</strong> anni vale oggi:</p>
+        <p class="gformula">Valore attuale = 1 € / (1 + r)<sup>t</sup></p></section>
+
+      <section><span class="eyebrow">2 · I numeri</span><h2>Quanto vale oggi 1 € ricevuto tra t anni</h2>
+        <div class="gtable"><table><thead><tr><th>Tra…</th><th>2,5%<small>≈ conto deposito</small></th><th>5%</th><th>7,5%</th><th>10%</th><th>12,5%</th><th>15%</th></tr></thead><tbody>${rows}</tbody></table></div>
+        <p class="small">Tasso di sconto annuo in colonna. Valori in euro. Più scuro il riquadro, più il futuro conserva il suo valore.</p>
+        <p class="note">Con un tasso del <strong>10%</strong>, 1 € tra 50 anni vale oggi <strong>meno di un centesimo</strong>. È il problema della cooperazione tra generazioni: chi pagherà o riceverà quell’euro non è ancora nato.</p></section>
+
+      <section><span class="eyebrow">3 · Chi paga il conto</span><h2>Più alto il tasso, più penalizziamo chi verrà</h2>
+        <ul><li>Le generazioni future rischiano di sostenere una parte sproporzionata dei <strong>costi</strong> dei progetti di oggi, o di <strong>rinunciare ai loro benefici</strong>.</li>
+        <li>Un tasso alto fa sembrare poco convenienti gli investimenti a lungo termine: si investe meno, e ai nostri figli lasciamo <strong>meno capitale costruito</strong> e <strong>più capitale naturale consumato</strong> (clima, suolo, biodiversità).</li></ul></section>
+
+      <section><span class="eyebrow">4 · La tirannia del presente</span><h2>Scontare il futuro non è solo un calcolo: è una scelta</h2>
+        <dl class="gtri"><div><dt>Economia</dt><dd>quanto rendono le risorse nel tempo e quanto gli individui sono agenti razionali</dd></div>
+        <div><dt>Matematica</dt><dd>l’interesse composto cancella il lontano</dd></div>
+        <div><dt>Etica</dt><dd>quanto contano le persone che verranno</dd></div></dl></section>
+
+      <section><span class="eyebrow">5 · Una soluzione</span><h2>Tassi di sconto che scendono nel tempo</h2>
+        <p>L’economista Martin Weitzman propose per le scelte pubbliche un tasso che <strong>diminuisce con l’orizzonte</strong>: il breve periodo viene scontato di più, il lontano sempre meno, fino a un pavimento vicino allo zero. La ragione è l’<strong>incertezza sul futuro</strong>: non sappiamo quale tasso sarà giusto tra cento anni, e tenendo conto di tutti gli scenari pesano di più quelli con tassi bassi.</p>
+        ${g}
+        <div class="gsched"><div><b>4%</b>1–5 anni</div><div><b>3%</b>6–25 anni</div><div><b>2%</b>26–75 anni</div><div><b>1%</b>76–300 anni</div><div><b>0%</b>oltre 300</div></div>
+        <p class="small">Weitzman, M. (2001), “Gamma Discounting”, <em>American Economic Review</em>, 91(1), 260–271.</p>
+        <h3>Valore oggi di 1.000 € di benefici ambientali futuri</h3>
+        <div class="gtable"><table class="gcmp"><thead><tr><th>Tra…</th><th>tasso fisso 4%</th><th>tassi decrescenti</th></tr></thead><tbody>
+          ${[10,25,50].map(T=>`<tr><th>${T} anni</th><td>${eur(1000/Math.pow(1.04,T))}</td><td class="t">${eur(weitz(T))}</td></tr>`).join("")}</tbody></table></div></section>
+
+      <section><span class="eyebrow">6 · Un esperimento</span><h2>Cooperare con il futuro</h2>
+        <p class="small">Hauser, Rand, Peysakhovich &amp; Nowak (2014), “Cooperating with the future”, <em>Nature</em>, 511, 220–223.</p>
+        <p>Se oggi sfruttiamo troppo pesca, foreste o clima, il conto arriva a chi verrà dopo, che non può ricambiare. Che cosa può spingerci a cooperare lo stesso? Alcuni ricercatori di Harvard e Yale lo hanno messo alla prova con un gioco.</p>
+        <ul><li>Gruppi di <strong>5 persone</strong> (una “generazione”) condividono una risorsa di <strong>100 unità</strong>; ognuno ne prende da 0 a 20, che diventano denaro vero.</li>
+        <li>Se il gruppo prende <strong>al massimo 50</strong>, la risorsa si rinnova per la generazione successiva. Se supera 50, è <strong>esaurita per sempre</strong>.</li></ul>
+        <div class="gduo">
+          <div class="gpanel"><h3>Ognuno decide da sé</h3><div class="ppl">${[10,10,10,10,20].map(person).join("")}</div>
+            <p>4 prendono 10, 1 prende 20: totale <strong>60</strong>. Basta una sola persona per esaurire la risorsa.</p><span class="verdict bad">✕ Risorsa esaurita</span></div>
+          <div class="gpanel"><h3>Si vota, e il voto vale per tutti</h3><div class="ppl">${[10,10,10,20,20].map(person).join("")}</div>
+            <p>3 propongono 10, 2 propongono 20: vale la proposta di mezzo, 10 a testa, totale <strong>50</strong>.</p><span class="verdict good">✓ Risorsa conservata</span></div>
+        </div>
+        <div class="gstats">
+          <div><b>68% → 88%</b>chi ha preso la sua “giusta parte”, decidendo da sé e poi votando. I più vogliono cooperare.</div>
+          <div><b>4 su 18</b>senza voto, le partite con la risorsa ancora intatta in seconda generazione. Alla quarta, nessuna.</div>
+          <div><b>20 su 20</b>con il voto, le partite in cui la risorsa è stata conservata per tutte le generazioni.</div>
+        </div>
+        <p class="note"><strong>Il voto deve valere per tutti.</strong> Se vincola solo 3 persone su 5, dopo 15 generazioni (simulate) la risorsa resta intatta nell’1,5% dei casi; se vincola tutti, nell’84%.</p>
+        <div class="glesson"><h3>Che cosa ci insegna sullo sconto del futuro</h3><ul>
+          <li><strong>Il problema non è che siamo tutti egoisti.</strong> La maggioranza coopera, ma basta una piccola minoranza che pensa solo al presente per distruggere la risorsa di tutti.</li>
+          <li><strong>Le regole comuni proteggono il futuro.</strong> Il voto permette alla maggioranza di frenare chi prende troppo e rassicura chi coopera.</li>
+          <li><strong>Funzionano solo se valgono per tutti.</strong> È la stessa sfida degli accordi sul clima.</li></ul></div></section>
+
+      <div class="row">
+        <a class="ghost glink" href="guida.pdf" target="_blank" rel="noopener">Scarica la guida in PDF</a>
+        <button class="cta" id="gback">${last ? "← Torna al tuo risultato" : "← Torna al quiz"}</button>
+      </div>
+    </div>`;
+  window.scrollTo(0,0);
+  document.getElementById("gback").onclick = () => { last ? result(last) : intro(); window.scrollTo(0,0); };
 }
 
 /* ============ Schermo (proiettore): aggiungi #schermo all'indirizzo ============ */
